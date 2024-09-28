@@ -5,6 +5,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.view.View;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * the main "view" class of the program.
  * All drawing and user interaction "begins" here, although
@@ -14,6 +17,7 @@ public class GameView extends View {
 
     private Grid grid;
     private boolean firstRun;
+    private List<GuiButton> buttons;
 
     /**
      * the public constructor. Like all view subclasses,
@@ -24,6 +28,7 @@ public class GameView extends View {
     public GameView(Context context) {
         super(context);
         firstRun = true;
+        buttons = new ArrayList<>();
     }
 
     /**
@@ -36,16 +41,43 @@ public class GameView extends View {
         super.onDraw(c);
         c.drawColor(Color.WHITE);
         if (firstRun) {
-            float w = c.getWidth();
-            float h = c.getHeight();
-            float unit = w/16f;
-            float gridX = unit * 2.5f;
-            float cellSize = unit * 2.3f;
-            float gridY = unit * 9;
-            grid = new Grid(gridX, gridY, cellSize);
+            init();
             firstRun = false;
         }
 
         grid.draw(c);
+        for (GuiButton b : buttons) {
+            b.draw(c);
+        }
+    }
+
+    /**
+     * this method sets up some of the variables
+     * needed for drawing the UI
+     */
+    private void init() {
+        float w = getWidth();
+        float h = getHeight();
+        float unit = w/16f;
+        float gridX = unit * 2.5f;
+        float cellSize = unit * 2.3f;
+        float gridY = unit * 9;
+        grid = new Grid(gridX, gridY, cellSize);
+        float buttonTop = gridY - cellSize;
+        float buttonLeft = gridX - cellSize;
+
+        //instantiate the top row of buttons
+        buttons.add(new GuiButton('1', this, buttonLeft + cellSize*1, buttonTop, cellSize));
+        buttons.add(new GuiButton('2', this, buttonLeft + cellSize*2, buttonTop, cellSize));
+        buttons.add(new GuiButton('3', this, buttonLeft + cellSize*3, buttonTop, cellSize));
+        buttons.add(new GuiButton('4', this, buttonLeft + cellSize*4, buttonTop, cellSize));
+        buttons.add(new GuiButton('5', this, buttonLeft + cellSize*5, buttonTop, cellSize));
+
+        //instantiate the left column of buttons
+        buttons.add(new GuiButton('A', this, buttonLeft, buttonTop + cellSize*1, cellSize));
+        buttons.add(new GuiButton('B', this, buttonLeft, buttonTop + cellSize*2, cellSize));
+        buttons.add(new GuiButton('C', this, buttonLeft, buttonTop + cellSize*3, cellSize));
+        buttons.add(new GuiButton('D', this, buttonLeft, buttonTop + cellSize*4, cellSize));
+        buttons.add(new GuiButton('E', this, buttonLeft, buttonTop + cellSize*5, cellSize));
     }
 }
