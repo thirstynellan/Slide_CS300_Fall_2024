@@ -10,19 +10,57 @@ import android.view.View;
 public class GuiButton {
 
     private RectF bounds;
-    private Bitmap unpressedButton;
+    private Bitmap unpressedButton, pressedButton;;
     private char label;
+    private boolean pressed;
 
     public GuiButton(char name, View parent, float x, float y, float width) {
         label = name;
         bounds = new RectF(x, y, x+width, y+width);
         unpressedButton = BitmapFactory.decodeResource(parent.getResources(), R.drawable.unpressed_button);
         unpressedButton = Bitmap.createScaledBitmap(unpressedButton, (int)width, (int)width, true);
+        pressedButton = BitmapFactory.decodeResource(parent.getResources(), R.drawable.pressed_button);
+        pressedButton = Bitmap.createScaledBitmap(pressedButton, (int)width, (int)width, true);
+        pressed = false;
+
     }
 
+    /**
+     * Draw the button at its correct place on the screen
+     * @param c the Canvas object to draw to
+     */
     public void draw(Canvas c) {
-        c.drawBitmap(unpressedButton, bounds.left, bounds.top, null);
+        if (pressed) {
+            c.drawBitmap(pressedButton, bounds.left, bounds.top, null);
+        } else {
+            c.drawBitmap(unpressedButton, bounds.left, bounds.top, null);
+        }
     }
+
+    /**
+     * Tests whether or not a given (x,y) point is inside the button or not
+     * @param x the point to test against the bounds
+     * @param y the point to test against the bounds
+     * @return true if (x,y) is inside the bounds; else false
+     */
+    public boolean contains(float x, float y) {
+        return bounds.contains(x,y);
+    }
+
+    /**
+     * Change the button to a "pressed" state
+     */
+    public void press() {
+        pressed = true;
+    }
+
+    /**
+     * Change the button to an "unpressed" state
+     */
+    public void release() {
+        pressed = false;
+    }
+
 
 }
 

@@ -3,7 +3,9 @@ package edu.byuh.cis.cs300.slidefall2024;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,4 +82,35 @@ public class GameView extends View {
         buttons.add(new GuiButton('D', this, buttonLeft, buttonTop + cellSize*4, cellSize));
         buttons.add(new GuiButton('E', this, buttonLeft, buttonTop + cellSize*5, cellSize));
     }
+
+    /**
+     * Handle touchscreen events. Right now, we only deal with button presses
+     * @param m the MotionEvent object, provided by OS
+     * @return true, always
+     */
+    @Override
+    public boolean onTouchEvent(MotionEvent m) {
+        if (m.getAction() == MotionEvent.ACTION_DOWN) {
+            float x = m.getX();
+            float y = m.getY();
+            boolean missed = true;
+            for (GuiButton b : buttons) {
+                if (b.contains(x,y)) {
+                    b.press();
+                    missed = false;
+                }
+            }
+            if (missed) {
+                Toast t = Toast.makeText(getContext(), "Please touch a button", Toast.LENGTH_SHORT);
+                t.show();
+            }
+        } else if (m.getAction() == MotionEvent.ACTION_UP) {
+            for (GuiButton b : buttons) {
+                b.release();
+            }
+        }
+        invalidate();
+        return true;
+    }
+
 }
