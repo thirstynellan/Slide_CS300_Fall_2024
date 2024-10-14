@@ -61,6 +61,37 @@ public class GuiButton {
         pressed = false;
     }
 
+    /**
+     * Simple "getter" method for the button's label
+     * @return
+     */
+    public char getLabel() {
+        return label;
+    }
+
+    /**
+     * Is this button on the top row or the left column?
+     * @return true if top, false if side.
+     */
+    public boolean isTopButton() {
+        return (label >= '1' && label <= '5');
+    }
+
+    /**
+     * Is this button on the top row or the left column?
+     * @return true if side, false if top.
+     */
+    public boolean isLeftButton() {
+        return (label >= 'A' && label <= 'E');
+    }
+
+    /**
+     * Get the current dimensions of the button
+     * @return a RectF object
+     */
+    public RectF getBounds() {
+        return bounds;
+    }
 
 }
 

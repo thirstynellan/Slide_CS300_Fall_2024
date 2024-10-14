@@ -3,6 +3,8 @@ package edu.byuh.cis.cs300.slidefall2024;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Message;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -19,7 +21,31 @@ public class GameView extends View {
 
     private Grid grid;
     private boolean firstRun;
-    private List<GuiButton> buttons;
+    private GuiButton[] buttons;
+    private List<GuiToken> tokens;
+    private GameBoard engine;
+    private Timer tim;
+
+    /**
+     * This class pumps out "timer" events at
+     * regular intervals, so we can do animation.
+     */
+    private class Timer extends Handler {
+
+        public Timer() {
+            sendMessageDelayed(obtainMessage(), 100);
+        }
+
+        @Override
+        public void handleMessage(Message m) {
+            for (GuiToken b : tokens) {
+                b.move();
+            }
+            invalidate();
+            sendMessageDelayed(obtainMessage(), 100);
+        }
+    }
+
 
     /**
      * the public constructor. Like all view subclasses,
@@ -30,7 +56,10 @@ public class GameView extends View {
     public GameView(Context context) {
         super(context);
         firstRun = true;
-        buttons = new ArrayList<>();
+        buttons = new GuiButton[10];
+        tokens = new ArrayList<>();
+        engine = new GameBoard();
+        tim = new Timer();
     }
 
     /**
@@ -48,7 +77,10 @@ public class GameView extends View {
         }
 
         grid.draw(c);
-        for (GuiButton b : buttons) {
+        for (var tok : tokens) {
+            tok.draw(c);
+        }
+        for (var b : buttons) {
             b.draw(c);
         }
     }
@@ -69,18 +101,18 @@ public class GameView extends View {
         float buttonLeft = gridX - cellSize;
 
         //instantiate the top row of buttons
-        buttons.add(new GuiButton('1', this, buttonLeft + cellSize*1, buttonTop, cellSize));
-        buttons.add(new GuiButton('2', this, buttonLeft + cellSize*2, buttonTop, cellSize));
-        buttons.add(new GuiButton('3', this, buttonLeft + cellSize*3, buttonTop, cellSize));
-        buttons.add(new GuiButton('4', this, buttonLeft + cellSize*4, buttonTop, cellSize));
-        buttons.add(new GuiButton('5', this, buttonLeft + cellSize*5, buttonTop, cellSize));
+        buttons[0] = new GuiButton('1', this, buttonLeft + cellSize*1, buttonTop, cellSize);
+        buttons[1] = new GuiButton('2', this, buttonLeft + cellSize*2, buttonTop, cellSize);
+        buttons[2] = new GuiButton('3', this, buttonLeft + cellSize*3, buttonTop, cellSize);
+        buttons[3] = new GuiButton('4', this, buttonLeft + cellSize*4, buttonTop, cellSize);
+        buttons[4] = new GuiButton('5', this, buttonLeft + cellSize*5, buttonTop, cellSize);
 
         //instantiate the left column of buttons
-        buttons.add(new GuiButton('A', this, buttonLeft, buttonTop + cellSize*1, cellSize));
-        buttons.add(new GuiButton('B', this, buttonLeft, buttonTop + cellSize*2, cellSize));
-        buttons.add(new GuiButton('C', this, buttonLeft, buttonTop + cellSize*3, cellSize));
-        buttons.add(new GuiButton('D', this, buttonLeft, buttonTop + cellSize*4, cellSize));
-        buttons.add(new GuiButton('E', this, buttonLeft, buttonTop + cellSize*5, cellSize));
+        buttons[5] = new GuiButton('A', this, buttonLeft, buttonTop + cellSize*1, cellSize);
+        buttons[6] = new GuiButton('B', this, buttonLeft, buttonTop + cellSize*2, cellSize);
+        buttons[7] = new GuiButton('C', this, buttonLeft, buttonTop + cellSize*3, cellSize);
+        buttons[8] = new GuiButton('D', this, buttonLeft, buttonTop + cellSize*4, cellSize);
+        buttons[9] = new GuiButton('E', this, buttonLeft, buttonTop + cellSize*5, cellSize);
     }
 
     /**
@@ -97,6 +129,9 @@ public class GameView extends View {
             for (GuiButton b : buttons) {
                 if (b.contains(x,y)) {
                     b.press();
+                    var tok = new GuiToken(engine.getCurrentPlayer(), b, getResources());
+                    engine.submitMove(b.getLabel());
+                    tokens.add(tok);
                     missed = false;
                 }
             }
