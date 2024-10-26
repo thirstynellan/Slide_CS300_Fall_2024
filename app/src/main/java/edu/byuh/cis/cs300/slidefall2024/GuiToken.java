@@ -11,13 +11,20 @@ import android.graphics.RectF;
  * Represents a single X or O on the grid.
  * It is the graphical analog to the Player enum.
  */
-public class GuiToken {
+public class GuiToken implements TickListener {
     private Player player;
     private RectF bounds;
     private PointF velocity;
-    private PointF destination;
-    private float tolerance;
     private Bitmap image;
+    private GridPosition gp;
+    private static int movers = 0;
+    private int stepCounter;
+    private final int STEPS = 11;
+
+    public class GridPosition {
+        public char row;
+        public char col;
+    }
 
     /**
      * Create a new GuiToken object
@@ -26,10 +33,17 @@ public class GuiToken {
      * @param res the Resources object (used for loading image)
      */
     public GuiToken(Player p, GuiButton parent, Resources res) {
+        gp = new GridPosition();
+        if (parent.isTopButton()) {
+            gp.row = 'A' - 1;
+            gp.col = parent.getLabel();
+        } else {
+            gp.row = parent.getLabel();
+            gp.col = '1' - 1;
+        }
+
         this.bounds = new RectF(parent.getBounds());
         velocity = new PointF();
-        destination = new PointF();
-        tolerance = bounds.height()/10f;
         player = p;
         if (player == Player.X) {
             image = BitmapFactory.decodeResource(res, R.drawable.player_x);
@@ -37,11 +51,6 @@ public class GuiToken {
             image = BitmapFactory.decodeResource(res, R.drawable.player_o);
         }
         image = Bitmap.createScaledBitmap(image, (int)bounds.width(), (int)bounds.height(), true);
-        if (parent.isTopButton()) {
-            moveDown();
-        } else {
-            moveRight();
-        }
     }
 
     /**
@@ -59,12 +68,11 @@ public class GuiToken {
      */
     public void move() {
         if (velocity.x != 0 || velocity.y != 0) {
-            float dx = destination.x - bounds.left;
-            float dy = destination.y - bounds.top;
-            if (PointF.length(dx, dy) < tolerance) {
-                bounds.offsetTo(destination.x, destination.y);
+            if (stepCounter >= STEPS) {
                 velocity.set(0,0);
+                movers--;
             } else {
+                stepCounter++;
                 bounds.offset(velocity.x, velocity.y);
             }
         }
@@ -73,15 +81,23 @@ public class GuiToken {
     /**
      * Helper method for tokens created by the top row of buttons
      */
-    public void moveDown() {
-        setGoal(bounds.left, bounds.top+bounds.height());
+    public void startMovingDown() {
+        startMoving(0, bounds.width()/STEPS);
+        gp.row++;
     }
 
     /**
      * Helper method for tokens created by the left column of buttons
      */
-    public void moveRight() {
-        setGoal(bounds.left+bounds.width(), bounds.top);
+    public void startMovingRight() {
+        startMoving(bounds.width()/STEPS, 0);
+        gp.col++;
+    }
+
+    private void startMoving(float vx, float vy) {
+        velocity.set(vx, vy);
+        movers++;
+        stepCounter = 0;
     }
 
     /**
@@ -92,16 +108,16 @@ public class GuiToken {
         return (velocity.x > 0 || velocity.y > 0);
     }
 
-    /**
-     * Assign a destination location to the token
-     * @param x the X coordinate where the token should stop
-     * @param y the X coordinate where the token should stop
-     */
-    private void setGoal(float x, float y) {
-        destination.set(x,y);
-        float dx = destination.x - bounds.left;
-        float dy = destination.y - bounds.top;
-        velocity.x = dx/11f;
-        velocity.y = dy/11f;
+    public static boolean anyMovers() {
+        return movers > 0;
+    }
+
+    @Override
+    public void onTick() {
+        move();
+    }
+
+    public boolean matches(char row, char col) {
+        return (gp.row == row && gp.col == col);
     }
 }

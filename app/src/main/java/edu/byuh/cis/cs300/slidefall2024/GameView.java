@@ -3,8 +3,6 @@ package edu.byuh.cis.cs300.slidefall2024;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.os.Handler;
-import android.os.Message;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -17,7 +15,7 @@ import java.util.List;
  * All drawing and user interaction "begins" here, although
  * this class delegates much of the work to other classes.
  */
-public class GameView extends View {
+public class GameView extends View implements TickListener {
 
     private Grid grid;
     private boolean firstRun;
@@ -26,25 +24,6 @@ public class GameView extends View {
     private GameBoard engine;
     private Timer tim;
 
-    /**
-     * This class pumps out "timer" events at
-     * regular intervals, so we can do animation.
-     */
-    private class Timer extends Handler {
-
-        public Timer() {
-            sendMessageDelayed(obtainMessage(), 100);
-        }
-
-        @Override
-        public void handleMessage(Message m) {
-            for (GuiToken b : tokens) {
-                b.move();
-            }
-            invalidate();
-            sendMessageDelayed(obtainMessage(), 100);
-        }
-    }
 
 
     /**
@@ -60,6 +39,7 @@ public class GameView extends View {
         tokens = new ArrayList<>();
         engine = new GameBoard();
         tim = new Timer();
+        tim.register(this);
     }
 
     /**
@@ -123,29 +103,77 @@ public class GameView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent m) {
         if (m.getAction() == MotionEvent.ACTION_DOWN) {
-            float x = m.getX();
-            float y = m.getY();
-            boolean missed = true;
-            for (GuiButton b : buttons) {
-                if (b.contains(x,y)) {
-                    b.press();
-                    var tok = new GuiToken(engine.getCurrentPlayer(), b, getResources());
-                    engine.submitMove(b.getLabel());
-                    tokens.add(tok);
-                    missed = false;
+            if (GuiToken.anyMovers() == false) {
+                float x = m.getX();
+                float y = m.getY();
+                boolean missed = true;
+                for (GuiButton b : buttons) {
+                    if (b.contains(x, y)) {
+                        b.press();
+                        var tok = new GuiToken(engine.getCurrentPlayer(), b, getResources());
+                        engine.submitMove(b.getLabel());
+                        tokens.add(tok);
+                        tim.register(tok);
+                        setupAnimation(b, tok);
+                        missed = false;
+                    }
                 }
-            }
-            if (missed) {
-                Toast t = Toast.makeText(getContext(), "Please touch a button", Toast.LENGTH_SHORT);
-                t.show();
+                if (missed) {
+                    Toast t = Toast.makeText(getContext(), "Please touch a button", Toast.LENGTH_SHORT);
+                    t.show();
+                }
             }
         } else if (m.getAction() == MotionEvent.ACTION_UP) {
             for (GuiButton b : buttons) {
                 b.release();
             }
         }
-        invalidate();
         return true;
     }
 
+    private void setupAnimation(GuiButton b, GuiToken tok) {
+        List<GuiToken> neighbors = new ArrayList<>();
+        neighbors.add(tok);
+        if (b.isTopButton()) {
+            char col = b.getLabel();
+            for (char row = 'A'; row <= 'E'; row++) {
+                GuiToken other = findTokenAt(row, col);
+                if (other != null) {
+                    neighbors.add(other);
+                } else {
+                    break;
+                }
+            }
+            for (var n : neighbors) {
+                n.startMovingDown();
+            }
+        } else {
+            char row = b.getLabel();
+            for (char col = '1'; col <= '5'; col++) {
+                GuiToken other = findTokenAt(row, col);
+                if (other != null) {
+                    neighbors.add(other);
+                } else {
+                    break;
+                }
+            }
+            for (var n : neighbors) {
+                n.startMovingRight();
+            }
+        }
+    }
+
+    private GuiToken findTokenAt(char row, char col) {
+        for (var t : tokens) {
+            if (t.matches(row,col)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void onTick() {
+        invalidate();
+    }
 }
