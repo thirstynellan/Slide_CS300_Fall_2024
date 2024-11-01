@@ -20,6 +20,7 @@ public class GuiToken implements TickListener {
     private static int movers = 0;
     private int stepCounter;
     private final int STEPS = 11;
+    private boolean falling;
 
     public class GridPosition {
         public char row;
@@ -44,6 +45,7 @@ public class GuiToken implements TickListener {
 
         this.bounds = new RectF(parent.getBounds());
         velocity = new PointF();
+        falling = false;
         player = p;
         if (player == Player.X) {
             image = BitmapFactory.decodeResource(res, R.drawable.player_x);
@@ -67,16 +69,33 @@ public class GuiToken implements TickListener {
      * Stop when it reaches its destination location.
      */
     public void move() {
-        if (velocity.x != 0 || velocity.y != 0) {
-            if (stepCounter >= STEPS) {
-                velocity.set(0,0);
-                movers--;
-            } else {
-                stepCounter++;
-                bounds.offset(velocity.x, velocity.y);
+        if (falling) {
+            velocity.y *= 2;
+        } else {
+            if (velocity.x != 0 || velocity.y != 0) {
+                if (stepCounter >= STEPS) {
+                    velocity.set(0, 0);
+                    movers--;
+                    if (fellOff()) {
+                        velocity.set(0, 1);
+                        falling = true;
+                    }
+                } else {
+                    stepCounter++;
+                    bounds.offset(velocity.x, velocity.y);
+                }
             }
         }
     }
+
+    private boolean fellOff() {
+        return (gp.col > '5' || gp.row > 'E');
+    }
+
+    public boolean isInvisible(int h) {
+        return (bounds.top > h);
+    }
+
 
     /**
      * Helper method for tokens created by the top row of buttons

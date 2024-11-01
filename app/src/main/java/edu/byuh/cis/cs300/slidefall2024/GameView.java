@@ -1,6 +1,9 @@
 package edu.byuh.cis.cs300.slidefall2024;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.view.MotionEvent;
@@ -95,6 +98,20 @@ public class GameView extends View implements TickListener {
         buttons[9] = new GuiButton('E', this, buttonLeft, buttonTop + cellSize*5, cellSize);
     }
 
+    private boolean anyMovers() {
+//        boolean result = false;
+//        for (var t : tokens) {
+//            if (t.isMoving()) {
+//                result = true;
+//                break;
+//            }
+//        }
+//        return result;
+        return tokens.stream().anyMatch(t -> t.isMoving());
+        //anyMatch - kind of like OR
+        //allMatch - kind of like AND
+    }
+
     /**
      * Handle touchscreen events. Right now, we only deal with button presses
      * @param m the MotionEvent object, provided by OS
@@ -103,7 +120,7 @@ public class GameView extends View implements TickListener {
     @Override
     public boolean onTouchEvent(MotionEvent m) {
         if (m.getAction() == MotionEvent.ACTION_DOWN) {
-            if (GuiToken.anyMovers() == false) {
+            if (anyMovers() == false) {
                 float x = m.getX();
                 float y = m.getY();
                 boolean missed = true;
@@ -127,8 +144,18 @@ public class GameView extends View implements TickListener {
             for (GuiButton b : buttons) {
                 b.release();
             }
+            cleanupFallenTokens();
         }
         return true;
+    }
+
+    private void cleanupFallenTokens() {
+        for (GuiToken t : tokens) {
+            if (t.isInvisible(getHeight())) {
+                tim.unregister(t);
+                tokens.remove(t);
+            }
+        }
     }
 
     private void setupAnimation(GuiButton b, GuiToken tok) {
@@ -174,6 +201,40 @@ public class GameView extends View implements TickListener {
 
     @Override
     public void onTick() {
+        if (!GuiToken.anyMovers()) {
+            Player winner = engine.checkForWin();
+            if (winner != Player.BLANK) {
+                tim.pause();
+                String message;
+                if (winner == Player.X) {
+                    message = "Pineapple wins!";
+                } else if (winner == Player.O) {
+                    message = "Banana wins!";
+                } else {
+                    message = "It's a tie!";
+                }
+                AlertDialog.Builder ab = new AlertDialog.Builder(getContext());
+                ab.setMessage(message)
+                        .setTitle("GAME OVER!")
+                        .setCancelable(false)
+                        .setPositiveButton("Play again", (d,i) -> reset())
+                        .setNegativeButton("Quit", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface d, int i) {
+                                ((Activity)getContext()).finish();
+                            }
+                        });
+                AlertDialog box = ab.create();
+                box.show();
+            }
+        }
         invalidate();
+    }
+
+    private void reset() {
+        engine.clear();
+        tokens.clear();
+        tokens.forEach(t -> tim.unregister(t));
+        tim.restart();
     }
 }
