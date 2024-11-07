@@ -82,10 +82,10 @@ public class GuiToken implements TickListener {
                     }
                 } else {
                     stepCounter++;
-                    bounds.offset(velocity.x, velocity.y);
                 }
             }
         }
+        bounds.offset(velocity.x, velocity.y);
     }
 
     private boolean fellOff() {

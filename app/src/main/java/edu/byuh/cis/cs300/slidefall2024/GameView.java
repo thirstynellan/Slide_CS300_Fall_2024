@@ -119,6 +119,7 @@ public class GameView extends View implements TickListener {
      */
     @Override
     public boolean onTouchEvent(MotionEvent m) {
+        cleanupFallenTokens();
         if (m.getAction() == MotionEvent.ACTION_DOWN) {
             if (anyMovers() == false) {
                 float x = m.getX();
@@ -144,7 +145,6 @@ public class GameView extends View implements TickListener {
             for (GuiButton b : buttons) {
                 b.release();
             }
-            cleanupFallenTokens();
         }
         return true;
     }
@@ -154,6 +154,7 @@ public class GameView extends View implements TickListener {
             if (t.isInvisible(getHeight())) {
                 tim.unregister(t);
                 tokens.remove(t);
+                break;
             }
         }
     }
