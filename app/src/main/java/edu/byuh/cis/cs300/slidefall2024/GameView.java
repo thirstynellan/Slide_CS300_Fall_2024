@@ -26,6 +26,13 @@ public class GameView extends View implements TickListener {
     private List<GuiToken> tokens;
     private GameBoard engine;
     private Timer tim;
+    private GameMode mode;
+
+    //In the original Slide game, the computer was X
+    //and the human was O, so I've kept that here.
+    //But it doesn't really matter.
+    private static final Player COMPUTER = Player.X;
+    private static final Player HUMAN = Player.O;
 
 
 
@@ -37,6 +44,7 @@ public class GameView extends View implements TickListener {
      */
     public GameView(Context context) {
         super(context);
+        showWelcomeDialog();
         firstRun = true;
         buttons = new GuiButton[10];
         tokens = new ArrayList<>();
@@ -45,6 +53,14 @@ public class GameView extends View implements TickListener {
         tim.register(this);
     }
 
+    private void showWelcomeDialog() {
+        AlertDialog.Builder ab = new AlertDialog.Builder(getContext());
+        ab.setTitle("SLIDE")
+                .setMessage("Are you playing by yourself or with a friend?")
+                .setPositiveButton("Alone", (dialog, which) -> mode = GameMode.ONE_PLAYER)
+                .setNegativeButton("With a friend", (dialog, which) -> mode = GameMode.TWO_PLAYER)
+                .show();
+    }
     /**
      * Whatever you want the user to see, needs to get
      * drawn from this method
@@ -128,11 +144,7 @@ public class GameView extends View implements TickListener {
                 for (GuiButton b : buttons) {
                     if (b.contains(x, y)) {
                         b.press();
-                        var tok = new GuiToken(engine.getCurrentPlayer(), b, getResources());
-                        engine.submitMove(b.getLabel());
-                        tokens.add(tok);
-                        tim.register(tok);
-                        setupAnimation(b, tok);
+                        handleButtonPress(b);
                         missed = false;
                     }
                 }
@@ -227,9 +239,25 @@ public class GameView extends View implements TickListener {
                         });
                 AlertDialog box = ab.create();
                 box.show();
+            } else {
+                if (mode == GameMode.ONE_PLAYER
+                        && engine.getCurrentPlayer() == COMPUTER) {
+                    post(() -> {
+                        int r = (int)(Math.random() * 10);
+                        handleButtonPress(buttons[r]);
+                    });
+                }
             }
         }
         invalidate();
+    }
+
+    private void handleButtonPress(GuiButton b) {
+        var tok = new GuiToken(engine.getCurrentPlayer(), b, getResources());
+        engine.submitMove(b.getLabel());
+        tokens.add(tok);
+        tim.register(tok);
+        setupAnimation(b, tok);
     }
 
     private void reset() {
