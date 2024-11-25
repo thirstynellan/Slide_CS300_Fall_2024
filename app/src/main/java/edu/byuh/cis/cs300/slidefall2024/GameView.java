@@ -6,9 +6,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.appcompat.widget.AppCompatImageView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,15 +22,17 @@ import java.util.List;
  * All drawing and user interaction "begins" here, although
  * this class delegates much of the work to other classes.
  */
-public class GameView extends View implements TickListener {
+public class GameView extends AppCompatImageView implements TickListener {
 
     private Grid grid;
+    private Grid grid2;
     private boolean firstRun;
     private GuiButton[] buttons;
     private List<GuiToken> tokens;
     private GameBoard engine;
     private Timer tim;
     private GameMode mode;
+    private MediaPlayer song;
 
     //In the original Slide game, the computer was X
     //and the human was O, so I've kept that here.
@@ -42,25 +48,49 @@ public class GameView extends View implements TickListener {
      * on to the superclass
      * @param context a reference to the Activity that created this view
      */
-    public GameView(Context context) {
+    public GameView(Context context, GameMode gmo) {
         super(context);
-        showWelcomeDialog();
+        mode = gmo;
         firstRun = true;
         buttons = new GuiButton[10];
         tokens = new ArrayList<>();
         engine = new GameBoard();
         tim = new Timer();
         tim.register(this);
+        song = MediaPlayer.create(getContext(), R.raw.music);
+        song.setLooping(true);
+        song.start();
+        setImageResource(R.drawable.bkgd5);
+        setScaleType(ScaleType.FIT_XY);
     }
 
-    private void showWelcomeDialog() {
-        AlertDialog.Builder ab = new AlertDialog.Builder(getContext());
-        ab.setTitle("SLIDE")
-                .setMessage("Are you playing by yourself or with a friend?")
-                .setPositiveButton("Alone", (dialog, which) -> mode = GameMode.ONE_PLAYER)
-                .setNegativeButton("With a friend", (dialog, which) -> mode = GameMode.TWO_PLAYER)
-                .show();
+    /**
+     * Pause the background music. This method is intended
+     * to be called by Activity.onPause().
+     */
+    public void pauseMusic() {
+        song.pause();
     }
+
+    /**
+     * Resume the background music. This method is intended
+     * to be called by Activity.onResume().
+     */
+    public void resumeMusic() {
+        song.start();
+    }
+
+    /**
+     * Perform memory management tasks just prior to our
+     * parent Activity going down. Release the MediaPlayer
+     * object, and disable the Timer.
+     * Intended to be called by Activity.onDestroy()
+     */
+    public void shutdown() {
+        song.release();
+        tim.pause();
+    }
+
     /**
      * Whatever you want the user to see, needs to get
      * drawn from this method
@@ -69,16 +99,15 @@ public class GameView extends View implements TickListener {
     @Override
     public void onDraw(Canvas c) {
         super.onDraw(c);
-        c.drawColor(Color.WHITE);
+        //c.drawColor(Color.WHITE);
         if (firstRun) {
             init();
             firstRun = false;
         }
 
         grid.draw(c);
-        for (var tok : tokens) {
-            tok.draw(c);
-        }
+        grid2.draw(c);
+        tokens.forEach(t -> t.draw(c));
         for (var b : buttons) {
             b.draw(c);
         }
@@ -95,7 +124,9 @@ public class GameView extends View implements TickListener {
         float gridX = unit * 2.5f;
         float cellSize = unit * 2.3f;
         float gridY = unit * 9;
-        grid = new Grid(gridX, gridY, cellSize);
+        //grid = new Grid(gridX, gridY, cellSize);
+        grid = Grid.getGridInstance(gridX, gridY, cellSize);
+        grid2 = Grid.getGridInstance(0,0, 1000);
         float buttonTop = gridY - cellSize;
         float buttonLeft = gridX - cellSize;
 

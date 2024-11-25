@@ -16,6 +16,14 @@ public class Grid {
     private Paint paint;
     private RectF bounds;
     private float cellWidth;
+    private static Grid instance;
+
+    public static Grid getGridInstance(float x, float y, float cellWidth) {
+        if (instance == null) {
+            instance = new Grid(x,y,cellWidth);
+        }
+        return instance;
+    }
 
     /**
      * initializes the grid
@@ -23,7 +31,7 @@ public class Grid {
      * @param y the topmost y coordinate
      * @param cellWidth how wide each cell should be
      */
-    public Grid(float x, float y, float cellWidth) {
+    private Grid(float x, float y, float cellWidth) {
         this.cellWidth = cellWidth;
         lineWidth = cellWidth/20;
         bounds = new RectF(x, y, x+cellWidth*dim, y+cellWidth*dim);
